@@ -9,6 +9,8 @@ import (
 )
 
 func main() {
+	logger := log.New(os.Stdout, "", log.Lshortfile)
+
 	url := os.Getenv("NATS_URL")
 	if url == "" {
 		url = nats.DefaultURL
@@ -20,26 +22,26 @@ func main() {
 
 	err := nc.Publish("greet.joe", []byte("hello"))
 	if err != nil {
-		log.Println(err)
+		logger.Println(err)
 	}
 
 	sub, _ := nc.SubscribeSync("greet.*")
 
 	msg, err := sub.NextMsg(10 * time.Millisecond)
 	if err != nil {
-		log.Println(err)
+		logger.Println(err)
 	}
 	fmt.Println("subscribed after a publish...")
 	fmt.Printf("msg is nil? %v\n", msg == nil)
 
 	err = nc.Publish("greet.joe", []byte("hello"))
 	if err != nil {
-		log.Println(err)
+		logger.Println(err)
 	}
 
 	err = nc.Publish("greet.pam", []byte("hello"))
 	if err != nil {
-		log.Println(err)
+		logger.Println(err)
 	}
 
 	msg, _ = sub.NextMsg(10 * time.Millisecond)
@@ -50,7 +52,7 @@ func main() {
 
 	err = nc.Publish("greet.bob", []byte("hello"))
 	if err != nil {
-		log.Println(err)
+		logger.Println(err)
 	}
 
 	msg, _ = sub.NextMsg(10 * time.Millisecond)
