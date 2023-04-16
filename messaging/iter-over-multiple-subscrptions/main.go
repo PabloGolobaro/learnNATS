@@ -38,32 +38,36 @@ func main() {
 		logger.Println(err)
 	}
 
-	s := map[int]*nats.Subscription{0: sub_car, 1: sub_plane, 3: sub_ship}
+	s := map[int]*nats.Subscription{0: sub_car, 1: sub_plane, 2: sub_ship}
 
-	for i := 0; i < 3; i++ {
+	wg.Add(len(s))
+
+	for i := 0; i < len(s); i++ {
 		go func(num int) {
 			var msg *nats.Msg
 			var err error
 			for {
-				msg, err = s[num].NextMsg(time.Millisecond * 10)
+				msg, err = s[num].NextMsg(time.Second * 1)
 				if err != nil {
-					logger.Println(err)
+					logger.Printf("Error in goroutine %d: %q\n", num, err)
 					break
 				}
 				fmt.Printf("Got message:(%s) in goroutine %d\n", string(msg.Data), num)
 			}
+
+			wg.Done()
 		}(i)
 	}
 
 	m := map[int]string{0: "cars", 1: "planes", 2: "ships"}
 
-	wg.Add(3)
+	wg.Add(len(m))
 
-	for i := 0; i < 3; i++ {
+	for i := 0; i < len(m); i++ {
 		go func(num int) {
 			subj := m[num] + "."
 
-			for i := 0; i < 100; i++ {
+			for i := 0; i < 1000; i++ {
 
 				resSubj := subj + strconv.Itoa(i)
 				data := subj + " number " + strconv.Itoa(i)
@@ -72,7 +76,9 @@ func main() {
 				if err != nil {
 					logger.Println(err)
 				}
-				fmt.Printf("Published message:(%s) in goroutine %d\n", data, num)
+				fmt.Printf("Published message:(%s) to subject %s in goroutine %d\n", data, resSubj, num)
+
+				<-time.After(time.Millisecond * 100)
 			}
 
 			wg.Done()
